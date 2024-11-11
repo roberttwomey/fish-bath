@@ -153,7 +153,7 @@ function onPointerClick(event) {
     const intersects = raycaster.intersectObjects([playButton]);
 
     if (intersects.length > 0) {
-        setupAudioPlayback();
+        // setupAudioPlayback();
         // Start audio playback
         audioElement.play();
         console.log("Audio playback started.");
@@ -164,6 +164,7 @@ function onPointerClick(event) {
 
 // Animation loop with fade effect
 function animate() {
+    setupAudioPlayback(); // start audio context
     renderer.setAnimationLoop(render);
 }
 
