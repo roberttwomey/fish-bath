@@ -16,10 +16,12 @@ import { ARButton } from 'https://threejs.org/examples/jsm/webxr/ARButton.js';
 
 let scene, camera, renderer;
 let fadeValue = 0;
-let fadingIn = true;
+let fadingIn = false;
 let audioContext, audioElement, audioSource;
 let mediaRecorder;
 let chunks = [];
+let playButton;
+let raycaster, pointer;
 
 // Initialize WebXR, audio playback, and microphone setup
 init();
@@ -48,6 +50,16 @@ async function init() {
 
     // Initialize microphone recording with voice activity detection
     setupMicrophoneRecording();
+
+    // Initialize the play button in the scene
+    createPlayButton();
+
+    // Initialize raycaster for button interaction
+    raycaster = new THREE.Raycaster();
+    pointer = new THREE.Vector2();
+
+    // Add event listener for mouse clicks
+    window.addEventListener('click', onPointerClick);
 
     // Fade effect initialization
     renderer.setClearAlpha(fadeValue);
@@ -109,6 +121,44 @@ function saveRecording() {
     link.download = 'recorded-voice.webm';
     link.click();
     chunks = []; // Clear the chunks for the next recording session
+}
+
+// Create a 3D button to start audio playback
+function createPlayButton() {
+    const buttonGeometry = new THREE.PlaneGeometry(0.2, 0.1);
+    const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
+    playButton = new THREE.Mesh(buttonGeometry, buttonMaterial);
+    playButton.position.set(0, 1, -1); // Position it in front of the user
+    scene.add(playButton);
+
+    // Add button label
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    context.font = '20px Arial';
+    context.fillStyle = 'white';
+    context.fillText('Play Audio', 10, 20);
+    const texture = new THREE.CanvasTexture(canvas);
+    const labelMaterial = new THREE.MeshBasicMaterial({ map: texture });
+    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.1), labelMaterial);
+    label.position.set(0, 1, -0.99);
+    scene.add(label);
+}
+
+// Handle clicks on the play button
+function onPointerClick(event) {
+    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(pointer, camera);
+    const intersects = raycaster.intersectObjects([playButton]);
+
+    if (intersects.length > 0) {
+        // Start audio playback
+        audioElement.play();
+        console.log("Audio playback started.");
+        fadingIn = true;
+        console.log("Starting fade in...");
+    }
 }
 
 // Animation loop with fade effect
