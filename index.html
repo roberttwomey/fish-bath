@@ -46,7 +46,7 @@ async function init() {
     scene.background = new THREE.Color(0x87CEEB);
 
     // Initialize audio playback
-    await setupAudioPlayback();
+    // await setupAudioPlayback();
 
     // Initialize microphone recording with voice activity detection
     setupMicrophoneRecording();
@@ -153,6 +153,7 @@ function onPointerClick(event) {
     const intersects = raycaster.intersectObjects([playButton]);
 
     if (intersects.length > 0) {
+        await setupAudioPlayback();
         // Start audio playback
         audioElement.play();
         console.log("Audio playback started.");
