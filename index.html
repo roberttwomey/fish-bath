@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebXR Fade to Blue Sky</title>
+    <title>WebXR with Audio and Voice Recording</title>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -15,13 +15,17 @@ import * as THREE from 'https://threejs.org/build/three.module.js';
 import { ARButton } from 'https://threejs.org/examples/jsm/webxr/ARButton.js';
 
 let scene, camera, renderer;
-let fadeValue = 0; // Starting value for fade effect
+let fadeValue = 0;
 let fadingIn = true;
+let audioContext, audioElement, audioSource;
+let mediaRecorder;
+let chunks = [];
 
+// Initialize WebXR, audio playback, and microphone setup
 init();
 animate();
 
-function init() {
+async function init() {
     // Renderer setup
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -35,14 +39,79 @@ function init() {
     // Camera and Scene setup
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-    
-    // Blue sky color
-    scene.background = new THREE.Color(0x87CEEB); // Sky blue color
+
+    // Set the background color to sky blue
+    scene.background = new THREE.Color(0x87CEEB);
+
+    // Initialize audio playback
+    await setupAudioPlayback();
+
+    // Initialize microphone recording with voice activity detection
+    setupMicrophoneRecording();
 
     // Fade effect initialization
     renderer.setClearAlpha(fadeValue);
 }
 
+// Setup audio playback for a 5-minute audio file
+async function setupAudioPlayback() {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    audioElement = new Audio('media/day2-all.mp3'); // Replace with actual path
+    audioElement.loop = false; // Play once for 5 minutes
+    audioSource = audioContext.createMediaElementSource(audioElement);
+    audioSource.connect(audioContext.destination);
+
+    // Start playback when XR session starts
+    audioElement.play();
+}
+
+// Setup microphone recording with voice activity detection
+function setupMicrophoneRecording() {
+    // Request access to the microphone
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+
+            // Handle audio data chunks
+            mediaRecorder.ondataavailable = event => chunks.push(event.data);
+
+            // Start recording when voice activity is detected
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => console.log("Voice activity detection started.");
+            recognition.onresult = event => {
+                if (mediaRecorder.state === "inactive") {
+                    mediaRecorder.start();
+                    console.log("Recording started due to voice activity.");
+                }
+            };
+
+            recognition.onend = () => {
+                if (mediaRecorder.state === "recording") {
+                    mediaRecorder.stop();
+                    console.log("Recording stopped due to no voice activity.");
+                }
+                saveRecording();
+            };
+
+            recognition.start();
+        })
+        .catch(error => console.error("Microphone access denied:", error));
+}
+
+function saveRecording() {
+    const blob = new Blob(chunks, { type: 'audio/webm' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'recorded-voice.webm';
+    link.click();
+    chunks = []; // Clear the chunks for the next recording session
+}
+
+// Animation loop with fade effect
 function animate() {
     renderer.setAnimationLoop(render);
 }
@@ -50,9 +119,9 @@ function animate() {
 function render() {
     // Fade effect
     if (fadingIn) {
-        fadeValue = Math.min(fadeValue + 0.01, 1); // Increase alpha gradually
+        fadeValue = Math.min(fadeValue + 0.01, 1);
         if (fadeValue >= 1) {
-            fadingIn = false; // Stop increasing after fully faded in
+            fadingIn = false;
         }
     }
     renderer.setClearAlpha(fadeValue);
