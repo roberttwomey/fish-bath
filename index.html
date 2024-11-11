@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebXR Fade to Blue Sky</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'https://threejs.org/build/three.module.js';
+import { ARButton } from 'https://threejs.org/examples/jsm/webxr/ARButton.js';
+
+let scene, camera, renderer;
+let fadeValue = 0; // Starting value for fade effect
+let fadingIn = true;
+
+init();
+animate();
+
+function init() {
+    // Renderer setup
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    renderer.xr.setReferenceSpaceType('local');
+    document.body.appendChild(renderer.domElement);
+
+    // AR Button for entering AR mode
+    document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+
+    // Camera and Scene setup
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+    
+    // Blue sky color
+    scene.background = new THREE.Color(0x87CEEB); // Sky blue color
+
+    // Fade effect initialization
+    renderer.setClearAlpha(fadeValue);
+}
+
+function animate() {
+    renderer.setAnimationLoop(render);
+}
+
+function render() {
+    // Fade effect
+    if (fadingIn) {
+        fadeValue = Math.min(fadeValue + 0.01, 1); // Increase alpha gradually
+        if (fadeValue >= 1) {
+            fadingIn = false; // Stop increasing after fully faded in
+        }
+    }
+    renderer.setClearAlpha(fadeValue);
+
+    // Render scene
+    renderer.render(scene, camera);
+}
+
+</script>
+</body>
+</html>
