@@ -62,7 +62,7 @@
     const buttonMaterial = new THREE.MeshBasicMaterial({ map: buttonTexture, transparent: true });
     const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
 
-    buttonMesh.position.set(0, 0.05, -1); // Position the button directly on the floor
+    buttonMesh.position.set(0, -0.1, -1); // Position the button directly on the floor
     scene.add(buttonMesh);
 
     // Create a raycaster and an array to store interactable objects
