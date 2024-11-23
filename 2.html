@@ -14,85 +14,48 @@
 <body>
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js';
-    import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/VRButton.js';
+    import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/ARButton.js';
 
+    // Set up scene, camera, and renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    // Enable VR button for Meta Quest 2
-    document.body.appendChild(VRButton.createButton(renderer));
+    // Enable AR button
+    document.body.appendChild(ARButton.createButton(renderer, { optionalFeatures: ['local-floor', 'dom-overlay'], domOverlay: { root: document.body } }));
 
-    // Add a centered exit button in 3D space
-    const exitButtonGeometry = new THREE.PlaneGeometry(0.3, 0.1); // Adjust size as needed
-    const exitButtonMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0xff0000, 
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8 
-    });
-    const exitButtonMesh = new THREE.Mesh(exitButtonGeometry, exitButtonMaterial);
-    exitButtonMesh.position.set(0, 1.5, -2); // In front of the user
-    scene.add(exitButtonMesh);
-
-    // Add text to the button using a canvas
-    const buttonTextCanvas = document.createElement('canvas');
-    const ctx = buttonTextCanvas.getContext('2d');
-    buttonTextCanvas.width = 256;
-    buttonTextCanvas.height = 128;
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(0, 0, 256, 128);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '40px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Exit', 128, 64);
-
-    const buttonTextTexture = new THREE.CanvasTexture(buttonTextCanvas);
-    exitButtonMaterial.map = buttonTextTexture;
-
-    // Handle XR Session
-    renderer.xr.addEventListener('sessionstart', () => {
-      const session = renderer.xr.getSession();
-
-      // Use passthrough if supported
-      session.requestReferenceSpace("local").then((refSpace) => {
-        if (session.environmentBlendMode === "alpha-blend") {
-          console.log("Passthrough supported and enabled.");
-        } else {
-          console.log("Passthrough not supported.");
-        }
-      });
-    });
-
-    // Add event listener for button interaction
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-
-    renderer.domElement.addEventListener('click', (event) => {
-      const session = renderer.xr.getSession();
-      if (!session) return;
-
-      // Raycast from the camera to check if the button was clicked
-      raycaster.setFromCamera(pointer, camera);
-      const intersects = raycaster.intersectObject(exitButtonMesh);
-
-      if (intersects.length > 0) {
-        console.log('Exit button clicked');
-        session.end(); // Exit the XR session
-      }
-    });
-
-    // Add some objects to the scene (optional)
-    const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    // Add a shaded cube to the scene
+    const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+    const material = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4, metalness: 0.6 });
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
 
-    cube.position.set(0, 1.5, -3);
+    cube.position.set(0, 1.5, -1); // Position the cube 1 meter in front of the user
+
+    // Add lighting to the scene
+    const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft ambient light
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 10, 7.5);
+    scene.add(directionalLight);
+
+    // Handle XR Session for passthrough
+    renderer.xr.addEventListener('sessionstart', () => {
+      const session = renderer.xr.getSession();
+      if (session.environmentBlendMode === "opaque") {
+        console.log("Passthrough enabled on Meta Quest 2.");
+      } else {
+        console.error("Passthrough is not supported.");
+      }
+    });
+
+    renderer.xr.addEventListener('sessionend', () => {
+      console.log("XR session ended.");
+    });
 
     // Animation loop
     function animate() {
