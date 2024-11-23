@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meta Quest 2 Passthrough</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/VRButton.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #exitButton {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      font-size: 60px;
+      background-color: red;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <button id="exitButton" style="display: none;">Exit</button>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    // Enable VR button for Meta Quest 2
+    document.body.appendChild(VRButton.createButton(renderer));
+
+    // Handle XR Session
+    renderer.xr.addEventListener('sessionstart', (event) => {
+      const session = renderer.xr.getSession();
+
+      // Use passthrough if supported
+      if (session.requestReferenceSpace("local").then((refSpace) => {
+        if (session.environmentBlendMode === "alpha-blend") {
+          console.log("Passthrough supported and enabled.");
+        } else {
+          console.log("Passthrough not supported.");
+        }
+      }));
+
+      // Show exit button during session
+      document.getElementById("exitButton").style.display = "block";
+    });
+
+    renderer.xr.addEventListener('sessionend', (event) => {
+      // Hide exit button after exiting XR
+      document.getElementById("exitButton").style.display = "none";
+    });
+
+    // Exit button functionality
+    const exitButton = document.getElementById("exitButton");
+    exitButton.addEventListener("click", () => {
+      const session = renderer.xr.getSession();
+      if (session) {
+        session.end();
+      }
+    });
+
+    // Add some objects to the scene (optional)
+    const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    cube.position.set(0, 1.5, -2);
+
+    // Animation loop
+    function animate() {
+      renderer.setAnimationLoop(() => {
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+        renderer.render(scene, camera);
+      });
+    }
+
+    animate();
+  </script>
+</body>
+</html>
