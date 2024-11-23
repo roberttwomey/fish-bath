@@ -28,9 +28,9 @@
     document.body.appendChild(ARButton.createButton(renderer, { optionalFeatures: ['local-floor', 'dom-overlay'], domOverlay: { root: document.body } }));
 
     // Add a shaded cube to the scene
-    const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-    const material = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4, metalness: 0.6 });
-    const cube = new THREE.Mesh(geometry, material);
+    const cubeGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+    const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4, metalness: 0.6 });
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
     scene.add(cube);
 
     cube.position.set(0, 1.5, -1); // Position the cube 1 meter in front of the user
@@ -42,6 +42,28 @@
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7.5);
     scene.add(directionalLight);
+
+    // Create an exit button below the cube
+    const buttonGeometry = new THREE.PlaneGeometry(0.2, 0.1); // Width and height of the button
+    const buttonCanvas = document.createElement('canvas');
+    buttonCanvas.width = 256;
+    buttonCanvas.height = 128;
+
+    const ctx = buttonCanvas.getContext('2d');
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(0, 0, 256, 128);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '40px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Exit', 128, 64);
+
+    const buttonTexture = new THREE.CanvasTexture(buttonCanvas);
+    const buttonMaterial = new THREE.MeshBasicMaterial({ map: buttonTexture, transparent: true });
+    const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
+
+    buttonMesh.position.set(0, 1.2, -1); // Position below the cube
+    scene.add(buttonMesh);
 
     // Handle XR Session for passthrough
     renderer.xr.addEventListener('sessionstart', () => {
@@ -55,6 +77,24 @@
 
     renderer.xr.addEventListener('sessionend', () => {
       console.log("XR session ended.");
+    });
+
+    // Handle button interaction using raycaster
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    renderer.domElement.addEventListener('click', (event) => {
+      const session = renderer.xr.getSession();
+      if (!session) return;
+
+      // Raycast from the camera to detect interaction with the button
+      raycaster.setFromCamera(pointer, camera);
+      const intersects = raycaster.intersectObject(buttonMesh);
+
+      if (intersects.length > 0) {
+        console.log('Exit button clicked');
+        session.end(); // Exit the XR session
+      }
     });
 
     // Animation loop
