@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meta Quest 2 Passthrough</title>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/VRButton.js"></script>
   <style>
     body {
       margin: 0;
@@ -16,7 +14,7 @@
       bottom: 20px;
       right: 20px;
       padding: 10px 20px;
-      font-size: 60px;
+      font-size: 16px;
       background-color: red;
       color: white;
       border: none;
@@ -28,7 +26,10 @@
 </head>
 <body>
   <button id="exitButton" style="display: none;">Exit</button>
-  <script>
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js';
+    import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/VRButton.js';
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -40,23 +41,23 @@
     document.body.appendChild(VRButton.createButton(renderer));
 
     // Handle XR Session
-    renderer.xr.addEventListener('sessionstart', (event) => {
+    renderer.xr.addEventListener('sessionstart', () => {
       const session = renderer.xr.getSession();
 
       // Use passthrough if supported
-      if (session.requestReferenceSpace("local").then((refSpace) => {
+      session.requestReferenceSpace("local").then((refSpace) => {
         if (session.environmentBlendMode === "alpha-blend") {
           console.log("Passthrough supported and enabled.");
         } else {
           console.log("Passthrough not supported.");
         }
-      }));
+      });
 
       // Show exit button during session
       document.getElementById("exitButton").style.display = "block";
     });
 
-    renderer.xr.addEventListener('sessionend', (event) => {
+    renderer.xr.addEventListener('sessionend', () => {
       // Hide exit button after exiting XR
       document.getElementById("exitButton").style.display = "none";
     });
