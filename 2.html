@@ -15,120 +15,62 @@
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js';
     import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/ARButton.js';
+    import { XRHandOculusQuest2 } from 'https://cdn.jsdelivr.net/npm/@xr3js/hand-tracking@latest/build/XRHandOculusQuest2.module.js'; // Import XRHandOculusQuest2
 
-    // Set up scene, camera, and renderer
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.xr.enabled = true;
-    document.body.appendChild(renderer.domElement);
+    // ... rest of the code remains the same ...
 
-    // Enable AR button
-    document.body.appendChild(ARButton.createButton(renderer, { optionalFeatures: ['local-floor', 'dom-overlay'], domOverlay: { root: document.body } }));
+    // Function to create and configure a controller mesh
+    function createControllerMesh(handedness) {
+      const controller = renderer.xr.getController(handedness);
+      const handProfile = new XRHandOculusQuest2({ handedness }); // Create hand profile
+      controller.addProfile(handProfile); // Add hand profile to controller
 
-    // Add a shaded cube to the scene
-    const cubeGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-    const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4, metalness: 0.6 });
-    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-    scene.add(cube);
-
-    cube.position.set(0, 0.15, -1); // Position the cube near the floor (0.15m above)
-
-    // Add lighting to the scene
-    const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft ambient light
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 10, 7.5);
-    scene.add(directionalLight);
-
-    // Create an exit button below the cube
-    const buttonGeometry = new THREE.PlaneGeometry(0.2, 0.1);
-    const buttonCanvas = document.createElement('canvas');
-    buttonCanvas.width = 256;
-    buttonCanvas.height = 128;
-
-    const ctx = buttonCanvas.getContext('2d');
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(0, 0, 256, 128);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '40px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Exit', 128, 64);
-
-    const buttonTexture = new THREE.CanvasTexture(buttonCanvas);
-    const buttonMaterial = new THREE.MeshBasicMaterial({ map: buttonTexture, transparent: true });
-    const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
-
-    buttonMesh.position.set(0, -0.1, -1); // Position the button directly on the floor
-    scene.add(buttonMesh);
-
-    // Create a raycaster and an array to store interactable objects
-    const raycaster = new THREE.Raycaster();
-    const intersectableObjects = [buttonMesh];
-
-    // Add controller handling
-    const controller1 = renderer.xr.getController(0);
-    const controller2 = renderer.xr.getController(1);
-
-    // Add helper visuals for the controllers
-    const controllerGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.1, 32);
-    const controllerMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    const controllerMesh1 = new THREE.Mesh(controllerGeometry, controllerMaterial);
-    const controllerMesh2 = new THREE.Mesh(controllerGeometry, controllerMaterial);
-
-    controller1.add(controllerMesh1);
-    controller2.add(controllerMesh2);
-
-    scene.add(controller1);
-    scene.add(controller2);
-
-    // Check for interactions
-    function handleController(controller) {
-      const tempMatrix = new THREE.Matrix4();
-      tempMatrix.identity().extractRotation(controller.matrixWorld);
-
-      raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-      raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-
-      const intersects = raycaster.intersectObjects(intersectableObjects);
-      if (intersects.length > 0) {
-        const intersectedObject = intersects[0].object;
-        if (intersectedObject === buttonMesh) {
-          console.log('Exit button clicked via controller');
-          renderer.xr.getSession().end(); // Exit the XR session
-        }
+      // Optional: Adjust controller position based on profile data (if needed)
+      const gripPose = controller.getPose(handProfile.gripSpace);
+      if (gripPose) {
+        // Access grip position and adjust controller mesh accordingly
       }
+
+      // You can also add a simple helper mesh for visualization
+      const controllerGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.1, 32);
+      const controllerMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+      const controllerMesh = new THREE.Mesh(controllerGeometry, controllerMaterial);
+      controller.add(controllerMesh);
+
+      return controller;
     }
 
-    // Add interaction detection to controllers
-    controller1.addEventListener('selectstart', () => handleController(controller1));
-    controller2.addEventListener('selectstart', () => handleController(controller2));
-
-    // Handle XR Session for passthrough
-    renderer.xr.addEventListener('sessionstart', () => {
-      const session = renderer.xr.getSession();
-      if (session.environmentBlendMode === "opaque") {
-        console.log("Passthrough enabled on Meta Quest 2.");
-      } else {
-        console.error("Passthrough is not supported.");
-      }
-    });
-
-    renderer.xr.addEventListener('sessionend', () => {
-      console.log("XR session ended.");
-    });
-
-    // Animation loop
+    // Update controller positions in animation loop
     function animate() {
       renderer.setAnimationLoop(() => {
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
+
+        // Update controller positions based on their poses
+        const controller1 = updateController(controller1);
+        const controller2 = updateController(controller2);
+
         renderer.render(scene, camera);
       });
     }
+
+    // Function to update controller position based on pose
+    function updateController(controller) {
+      const pose = controller.getPose();
+      if (pose) {
+        controller.position.copy(pose.position);
+        // Handle rotation based on your preference (optional)
+      }
+      return controller;
+    }
+
+    // ... rest of the code remains the same ...
+
+    const controller1 = createControllerMesh('left');
+    const controller2 = createControllerMesh('right');
+
+    scene.add(controller1);
+    scene.add(controller2);
 
     animate();
   </script>
