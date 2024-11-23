@@ -33,7 +33,7 @@
     const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
     scene.add(cube);
 
-    cube.position.set(0, 1.5, -1); // Position the cube 1 meter in front of the user
+    cube.position.set(0, 0.15, -1); // Position the cube near the floor (0.15m above)
 
     // Add lighting to the scene
     const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft ambient light
@@ -62,10 +62,10 @@
     const buttonMaterial = new THREE.MeshBasicMaterial({ map: buttonTexture, transparent: true });
     const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
 
-    buttonMesh.position.set(0, 1.2, -1); // Position below the cube
+    buttonMesh.position.set(0, 0.05, -1); // Position the button directly on the floor
     scene.add(buttonMesh);
 
-    // Create a raycaster and an array to store intersectable objects
+    // Create a raycaster and an array to store interactable objects
     const raycaster = new THREE.Raycaster();
     const intersectableObjects = [buttonMesh];
 
