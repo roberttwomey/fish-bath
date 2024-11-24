@@ -107,6 +107,33 @@
     controller1.addEventListener('selectstart', () => handleController(controller1));
     controller2.addEventListener('selectstart', () => handleController(controller2));
 
+
+    // Add a quad plane for the background overlay
+    const overlayGeometry = new THREE.PlaneGeometry(2, 2);
+    const overlayMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(0x0000ff) }, // Blue color
+        uOpacity: { value: 0 }, // Initial opacity
+      },
+      vertexShader: `
+        void main() {
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        uniform float uOpacity;
+        void main() {
+          gl_FragColor = vec4(uColor, uOpacity);
+        }
+      `,
+      transparent: true, // Enable transparency
+    });
+
+    const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
+    overlayMesh.frustumCulled = false; // Ensure it renders regardless of camera frustum
+    scene.add(overlayMesh);
+
     // Handle XR Session for passthrough
     renderer.xr.addEventListener('sessionstart', () => {
       const session = renderer.xr.getSession();
@@ -135,8 +162,11 @@
         fadeProgress = THREE.MathUtils.clamp(fadeProgress, 0, 1); // Clamp between 0 and 1
 
         // Set background color based on fade progress
-        const color = new THREE.Color(0x0000ff).lerp(new THREE.Color(0x000000), 1 - fadeProgress);
-        renderer.setClearColor(color, fadeProgress);
+        // const color = new THREE.Color(0x0000ff).lerp(new THREE.Color(0x000000), 1 - fadeProgress);
+        // renderer.setClearColor(color, fadeProgress);
+        
+        // Update overlay opacity
+        overlayMaterial.uniforms.uOpacity.value = fadeProgress;
 
         // Reverse direction at the edges
         if (fadeProgress === 0 || fadeProgress === 1) fadeDirection *= -1;
