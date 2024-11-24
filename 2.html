@@ -121,11 +121,31 @@
       console.log("XR session ended.");
     });
 
+    // Add a clock to track time
+    const clock = new THREE.Clock();
+    let fadeDirection = 1; // 1 for fading to blue, -1 for fading back to transparent
+    let fadeProgress = 0; // Progress of the fade effect (0 to 1)
+
     // Animation loop
     function animate() {
       renderer.setAnimationLoop(() => {
+        // Update fade effect
+        const delta = clock.getDelta();
+        fadeProgress += fadeDirection * delta / 2.5; // Full cycle takes 5 seconds (2.5 seconds each way)
+        fadeProgress = THREE.MathUtils.clamp(fadeProgress, 0, 1); // Clamp between 0 and 1
+
+        // Set background color based on fade progress
+        const color = new THREE.Color(0x0000ff).lerp(new THREE.Color(0x000000), 1 - fadeProgress);
+        renderer.setClearColor(color, fadeProgress);
+
+        // Reverse direction at the edges
+        if (fadeProgress === 0 || fadeProgress === 1) fadeDirection *= -1;
+
+        // Rotate the cube
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
+
+        // Render the scene
         renderer.render(scene, camera);
       });
     }
