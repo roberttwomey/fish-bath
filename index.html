@@ -8,6 +8,7 @@
     body {
       margin: 0;
       overflow: hidden;
+      background-color: grey;
     }
   </style>
 </head>
@@ -20,6 +21,7 @@
     import { OBJLoader } from './OBJLoader.js';
     import { MTLLoader } from './MTLLoader.js';
 
+    const twoPi = 2 * Math.PI;
 
     // Set up scene, camera, and renderer
     const scene = new THREE.Scene();
@@ -38,7 +40,7 @@
     //   fish.position.set(0, 0, -2);
     //   scene.add(fish);
     // });
-    let cube = null;
+    let fish = null;
 
     const mtlLoader = new MTLLoader();
     mtlLoader.load('./media/fish.mtl', (materials) => {
@@ -47,15 +49,17 @@
       const objLoader = new OBJLoader();
       objLoader.setMaterials(materials); // Apply materials to OBJLoader
       objLoader.load('./media/fish.obj', (loadedObject) => {
-        cube = loadedObject;
-        cube.scale.set(0.3, 0.3, 0.3); //0.5, 0.5, 0.5);
-        cube.position.set(0, 0.15, -1);
-        cube.rotation.set(0,0,0);
-        scene.add(cube);
+        fish = loadedObject;
+        fish.scale.set(0.3, 0.3, 0.3); //0.5, 0.5, 0.5);
+        fish.position.set(0, 0.15, -1);
+        fish.rotation.set(0,0,0);
+        scene.add(fish);
       });
     });
 
     let startDive = false;
+    let doRotate = true;
+    let stoppingRotation = false;
 
     // Flag for AR mode
     // let isARMode = false;
@@ -63,13 +67,13 @@
     // Enable AR button
     document.body.appendChild(ARButton.createButton(renderer, { optionalFeatures: ['local-floor', 'dom-overlay'], domOverlay: { root: document.body } }));
 
-    // Add a shaded cube to the scene
-    // const cubeGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-    // const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4, metalness: 0.6 });
-    // const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-    // scene.add(cube);
+    // Add a shaded fish to the scene
+    // const fishGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+    // const fishMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4, metalness: 0.6 });
+    // const fish = new THREE.Mesh(fishGeometry, fishMaterial);
+    // scene.add(fish);
 
-    // cube.position.set(0, 0.15, -1); // Position the cube near the floor (0.15m above)
+    // fish.position.set(0, 0.15, -1); // Position the fish near the floor (0.15m above)
 
     // Add lighting to the scene
     const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft ambient light
@@ -79,7 +83,7 @@
     directionalLight.position.set(5, 10, 7.5);
     scene.add(directionalLight);
 
-    // Create an Exit button below the cube
+    // Create an Exit button below the fish
     const buttonGeometry = new THREE.PlaneGeometry(0.2, 0.1);
     const buttonCanvas = document.createElement('canvas');
     buttonCanvas.width = 256;
@@ -171,6 +175,8 @@
     controller2.addEventListener('selectstart', () => handleController(controller2));
 
 
+    // Graphics Elements
+
     // Create a large sphere with a countershaded material
     const sphereGeometry = new THREE.SphereGeometry(5, 64, 64); // High segment count for smooth shading
     const sphereMaterial = new THREE.ShaderMaterial({
@@ -206,6 +212,31 @@
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
     scene.add(sphere);
 
+    // Add a quad plane for the background overlay
+    const overlayGeometry = new THREE.PlaneGeometry(2, 2);
+    const overlayMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(0x0000ff) }, // Blue color
+        uOpacity: { value: 0.2 }, // Initial opacity
+      },
+      vertexShader: `
+        void main() {
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        uniform float uOpacity;
+        void main() {
+          gl_FragColor = vec4(uColor, uOpacity);
+        }
+      `,
+      transparent: true, // Enable transparency
+    });
+    const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
+    overlayMesh.frustumCulled = false; // Ensure it renders regardless of camera frustum
+    scene.add(overlayMesh);
+
 
     // AUDIO PLAYBACK
     // Add an audio element to play the file
@@ -223,18 +254,23 @@
         console.error("Passthrough is not supported.");
       }
 
-      
-      console.log('Start dive...');
-      startDive = true;
-
+    
       // Add a 5-second delay before playing the audio
       setTimeout(() => {
         audio.play().then(() => {
           console.log('Audio is playing after 5-second delay');
+          stoppingRotation = true;
+
+          console.log('Start dive...');
+          startDive = true;
+
         }).catch((err) => {
           console.error('Error playing audio:', err);
         });
       }, 5000); // 5000 milliseconds = 5 seconds
+
+      // start stopping now
+      // stoppingRotation = true;
     });
 
 
@@ -294,14 +330,37 @@
           // Update sphere opacity for fade effect
           sphereMaterial.uniforms.uOpacity.value = fadeProgress;
 
+          // Update overlay opacity
+          // overlayMaterial.uniforms.uOpacity.value = fadeProgress;
+
           // Reverse direction at the edges
           if (fadeProgress === 0 || fadeProgress === 1) fadeDirection *= -1;
        }
 
-        // Rotate the cube
-        if (cube != null) {
-          cube.rotation.x += 0.01;
-          cube.rotation.y += 0.01;
+        // Rotate the fish
+        if (fish != null && doRotate) {
+          fish.rotation.x = (fish.rotation.x + 0.01) % twoPi;
+          fish.rotation.y = (fish.rotation.y + 0.01) % twoPi;
+        }
+
+        if (stoppingRotation && fish != null) {
+          // console.log('stopping rotation');
+          // console.log(fish.rotation.x);
+          // console.log(fish.rotation.y);
+          if (Math.abs(fish.rotation.x) <= 0.1 && Math.abs(fish.rotation.y) <= 0.1) {
+            // stoppingRotation = false; // Stop rotation
+            doRotate = false;
+            fish.rotation.x = 0; // Snap to 0 if close enough
+            fish.rotation.y = 0; // Snap to 0 if close enough
+
+            // audio.play().then(() => {
+            //   console.log('Audio is starting');
+            //   console.log('Start dive...');
+            //   startDive = true;
+            // }).catch((err) => {
+            //   console.error('Error playing audio:', err);
+            // });
+          }
         }
 
         // Render the scene
