@@ -16,7 +16,10 @@
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js';
     import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/ARButton.js';
     // import { OBJLoader } from 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/loaders/OBJLoader.js';
+    // import { MTLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/loaders/MTLLoader.js';
     import { OBJLoader } from './OBJLoader.js';
+    import { MTLLoader } from './MTLLoader.js';
+
 
     // Set up scene, camera, and renderer
     const scene = new THREE.Scene();
@@ -35,16 +38,24 @@
     //   fish.position.set(0, 0, -2);
     //   scene.add(fish);
     // });
-    const objLoader = new OBJLoader();
     let cube = null;
-    objLoader.load('./media/fish.obj', (loadedObject) => {
-      cube = loadedObject;
-      cube.scale.set(0.5, 0.5, 0.5);
-      cube.position.set(0, 0.15, -1);
-      cube.rotation.set(0,0,0);
-      scene.add(cube);
+
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load('./media/fish.mtl', (materials) => {
+      materials.preload(); // Prepare materials for use
+
+      const objLoader = new OBJLoader();
+      objLoader.setMaterials(materials); // Apply materials to OBJLoader
+      objLoader.load('./media/fish.obj', (loadedObject) => {
+        cube = loadedObject;
+        cube.scale.set(0.3, 0.3, 0.3); //0.5, 0.5, 0.5);
+        cube.position.set(0, 0.15, -1);
+        cube.rotation.set(0,0,0);
+        scene.add(cube);
+      });
     });
 
+    let startDive = false;
 
     // Flag for AR mode
     // let isARMode = false;
@@ -111,7 +122,7 @@
     const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
 
     buttonMesh.position.set(0, -0.3, -0.5); // Position the button directly on the floor
-    scene.add(buttonMesh);
+    // scene.add(buttonMesh);
 
     // Create a raycaster and an array to store interactable objects
     const raycaster = new THREE.Raycaster();
@@ -202,12 +213,19 @@
 
     // Handle XR Session for passthrough
     renderer.xr.addEventListener('sessionstart', () => {
+      scene.add(buttonMesh);
+      
       const session = renderer.xr.getSession();
       if (session.environmentBlendMode === "opaque") {
         console.log("Passthrough enabled on Meta Quest 2.");
       } else {
         console.error("Passthrough is not supported.");
       }
+
+      
+      console.log('Start dive...');
+      startDive = true;
+
       // Add a 5-second delay before playing the audio
       setTimeout(() => {
         audio.play().then(() => {
@@ -265,18 +283,19 @@
 
 
         // if (isARMode) {
-       
-        // Update fade effect
-        const delta = clock.getDelta();
-        // fadeProgress += fadeDirection * delta / 2.5; // Full cycle takes 5 seconds (2.5 seconds each way)
-        fadeProgress += fadeDirection * delta / 10.0; // Full cycle takes 5 seconds (2.5 seconds each way)
-        fadeProgress = THREE.MathUtils.clamp(fadeProgress, 0, 1); // Clamp between 0 and 1
+       if (startDive) {
+          // Update fade effect
+          const delta = clock.getDelta();
+          // fadeProgress += fadeDirection * delta / 2.5; // Full cycle takes 5 seconds (2.5 seconds each way)
+          fadeProgress += fadeDirection * delta / 10.0; // Full cycle takes 5 seconds (2.5 seconds each way)
+          fadeProgress = THREE.MathUtils.clamp(fadeProgress, 0, 1); // Clamp between 0 and 1
 
-        // Update sphere opacity for fade effect
-        sphereMaterial.uniforms.uOpacity.value = fadeProgress;
+          // Update sphere opacity for fade effect
+          sphereMaterial.uniforms.uOpacity.value = fadeProgress;
 
-        // Reverse direction at the edges
-        if (fadeProgress === 0 || fadeProgress === 1) fadeDirection *= -1;
+          // Reverse direction at the edges
+          if (fadeProgress === 0 || fadeProgress === 1) fadeDirection *= -1;
+       }
 
         // Rotate the cube
         if (cube != null) {
