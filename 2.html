@@ -108,31 +108,17 @@
     controller2.addEventListener('selectstart', () => handleController(controller2));
 
 
-    // Add a quad plane for the background overlay
-    const overlayGeometry = new THREE.PlaneGeometry(2, 2);
-    const overlayMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        uColor: { value: new THREE.Color(0x0000ff) }, // Blue color
-        uOpacity: { value: 0 }, // Initial opacity
-      },
-      vertexShader: `
-        void main() {
-          gl_Position = vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 uColor;
-        uniform float uOpacity;
-        void main() {
-          gl_FragColor = vec4(uColor, uOpacity);
-        }
-      `,
-      transparent: true, // Enable transparency
+    // Create a large sphere with an inward-facing material
+    const sphereGeometry = new THREE.SphereGeometry(5, 32, 32); // Large enough to encompass the scene
+    const sphereMaterial = new THREE.MeshBasicMaterial({
+      color: 0x0000ff, // Blue color
+      side: THREE.BackSide, // Render only the inside of the sphere
+      transparent: true, // Enable transparency for fading
+      opacity: 0, // Start fully transparent
     });
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    scene.add(sphere);
 
-    const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
-    overlayMesh.frustumCulled = false; // Ensure it renders regardless of camera frustum
-    scene.add(overlayMesh);
 
     // Handle XR Session for passthrough
     renderer.xr.addEventListener('sessionstart', () => {
@@ -161,12 +147,8 @@
         fadeProgress += fadeDirection * delta / 2.5; // Full cycle takes 5 seconds (2.5 seconds each way)
         fadeProgress = THREE.MathUtils.clamp(fadeProgress, 0, 1); // Clamp between 0 and 1
 
-        // Set background color based on fade progress
-        // const color = new THREE.Color(0x0000ff).lerp(new THREE.Color(0x000000), 1 - fadeProgress);
-        // renderer.setClearColor(color, fadeProgress);
-        
-        // Update overlay opacity
-        overlayMaterial.uniforms.uOpacity.value = fadeProgress;
+        // Update sphere opacity for fade effect
+        sphereMaterial.opacity = fadeProgress;
 
         // Reverse direction at the edges
         if (fadeProgress === 0 || fadeProgress === 1) fadeDirection *= -1;
