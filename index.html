@@ -62,7 +62,7 @@
     const buttonMaterial = new THREE.MeshBasicMaterial({ map: buttonTexture, transparent: true });
     const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
 
-    buttonMesh.position.set(0, -0.1, -1); // Position the button directly on the floor
+    buttonMesh.position.set(0, -0.3, -0.5); // Position the button directly on the floor
     scene.add(buttonMesh);
 
     // Create a raycaster and an array to store interactable objects
@@ -98,7 +98,11 @@
         const intersectedObject = intersects[0].object;
         if (intersectedObject === buttonMesh) {
           console.log('Exit button clicked via controller');
-          renderer.xr.getSession().end(); // Exit the XR session
+          // renderer.xr.getSession().end(); // Exit the XR session
+          // Reset the application to the starting screen
+          renderer.xr.getSession().end().then(() => {
+            resetToStartScreen();
+          });
         }
       }
     }
@@ -144,6 +148,10 @@
     scene.add(sphere);
 
 
+    // AUDIO PLAYBACK
+    // Add an audio element to play the file
+    const audio = new Audio('media/day2-all.mp3');
+
     // Handle XR Session for passthrough
     renderer.xr.addEventListener('sessionstart', () => {
       const session = renderer.xr.getSession();
@@ -152,11 +160,51 @@
       } else {
         console.error("Passthrough is not supported.");
       }
+      // Add a 5-second delay before playing the audio
+      setTimeout(() => {
+        audio.play().then(() => {
+          console.log('Audio is playing after 5-second delay');
+        }).catch((err) => {
+          console.error('Error playing audio:', err);
+        });
+      }, 5000); // 5000 milliseconds = 5 seconds
     });
 
+
     renderer.xr.addEventListener('sessionend', () => {
-      console.log("XR session ended.");
+      console.log('AR session ended');
+      
+      // Pause the audio when the AR session ends
+      audio.pause();
+      audio.currentTime = 0; // Reset to the start
     });
+
+
+    // Function to reset to the starting screen
+    function resetToStartScreen() {
+      console.log('Resetting to starting screen...');
+      
+      // Remove all 3D objects from the scene
+      while (scene.children.length > 0) {
+        const object = scene.children[0];
+        scene.remove(object);
+        if (object.geometry) object.geometry.dispose();
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach((m) => m.dispose());
+          } else {
+            object.material.dispose();
+          }
+        }
+      }
+
+      // Reset camera position and scene state
+      camera.position.set(0, 0, 0);
+      camera.lookAt(0, 0, -1);
+
+      // Optionally reload the page to completely reset
+      // location.reload(); // Uncomment this line to reload the entire page
+    }
 
     // Add a clock to track time
     const clock = new THREE.Clock();
@@ -187,6 +235,48 @@
     }
 
     animate();
+
+    
+  
+
+    // // Set up event listener for the AR session start
+    // renderer.xr.addEventListener('sessionstart', () => {
+    //   console.log('AR session started');
+
+    //   // Add a 5-second delay before playing the audio
+    //   setTimeout(() => {
+    //     audio.play().then(() => {
+    //       console.log('Audio is playing after 5-second delay');
+    //     }).catch((err) => {
+    //       console.error('Error playing audio:', err);
+    //     });
+    //   }, 5000); // 5000 milliseconds = 5 seconds
+    // });
+
+    // renderer.xr.addEventListener('sessionend', () => {
+    //   console.log('AR session ended');
+      
+    //   // Pause the audio when the AR session ends
+    //   audio.pause();
+    //   audio.currentTime = 0; // Reset to the start
+    // });
+
+    // // Create an audio control button (optional)
+    // const audioControlButton = document.createElement('button');
+    // audioControlButton.textContent = 'Play/Pause Audio';
+    // audioControlButton.style.position = 'absolute';
+    // audioControlButton.style.bottom = '20px';
+    // audioControlButton.style.left = '20px';
+    // audioControlButton.style.zIndex = '10';
+    // document.body.appendChild(audioControlButton);
+
+    // audioControlButton.addEventListener('click', () => {
+    //   if (audio.paused) {
+    //     audio.play();
+    //   } else {
+    //     audio.pause();
+    //   }
+    // });
   </script>
 </body>
 </html>
