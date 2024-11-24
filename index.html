@@ -15,6 +15,8 @@
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js';
     import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/ARButton.js';
+    // import { OBJLoader } from 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/loaders/OBJLoader.js';
+    import { OBJLoader } from './OBJLoader.js';
 
     // Set up scene, camera, and renderer
     const scene = new THREE.Scene();
@@ -24,16 +26,39 @@
     renderer.xr.enabled = true;
     document.body.appendChild(renderer.domElement);
 
+    // Load the fish model
+    // const objLoader = new OBJLoader();
+    // let fish;
+    // objLoader.load('media/fish.obj', (loadedObject) => {
+    //   fish = loadedObject;
+    //   fish.scale.set(0.5, 0.5, 0.5);
+    //   fish.position.set(0, 0, -2);
+    //   scene.add(fish);
+    // });
+    const objLoader = new OBJLoader();
+    let cube = null;
+    objLoader.load('./media/fish.obj', (loadedObject) => {
+      cube = loadedObject;
+      cube.scale.set(0.5, 0.5, 0.5);
+      cube.position.set(0, 0.15, -1);
+      cube.rotation.set(0,0,0);
+      scene.add(cube);
+    });
+
+
+    // Flag for AR mode
+    // let isARMode = false;
+
     // Enable AR button
     document.body.appendChild(ARButton.createButton(renderer, { optionalFeatures: ['local-floor', 'dom-overlay'], domOverlay: { root: document.body } }));
 
     // Add a shaded cube to the scene
-    const cubeGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-    const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4, metalness: 0.6 });
-    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-    scene.add(cube);
+    // const cubeGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+    // const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4, metalness: 0.6 });
+    // const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    // scene.add(cube);
 
-    cube.position.set(0, 0.15, -1); // Position the cube near the floor (0.15m above)
+    // cube.position.set(0, 0.15, -1); // Position the cube near the floor (0.15m above)
 
     // Add lighting to the scene
     const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft ambient light
@@ -237,9 +262,14 @@
     // Animation loop
     function animate() {
       renderer.setAnimationLoop(() => {
+
+
+        // if (isARMode) {
+       
         // Update fade effect
         const delta = clock.getDelta();
-        fadeProgress += fadeDirection * delta / 2.5; // Full cycle takes 5 seconds (2.5 seconds each way)
+        // fadeProgress += fadeDirection * delta / 2.5; // Full cycle takes 5 seconds (2.5 seconds each way)
+        fadeProgress += fadeDirection * delta / 10.0; // Full cycle takes 5 seconds (2.5 seconds each way)
         fadeProgress = THREE.MathUtils.clamp(fadeProgress, 0, 1); // Clamp between 0 and 1
 
         // Update sphere opacity for fade effect
@@ -249,11 +279,17 @@
         if (fadeProgress === 0 || fadeProgress === 1) fadeDirection *= -1;
 
         // Rotate the cube
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
+        if (cube != null) {
+          cube.rotation.x += 0.01;
+          cube.rotation.y += 0.01;
+        }
 
         // Render the scene
         renderer.render(scene, camera);
+        // } else {
+        //   if (fish) fish.rotation.y += 0.01;
+        //   renderer.render(scene, camera);
+        // }
       });
     }
 
