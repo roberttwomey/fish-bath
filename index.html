@@ -97,7 +97,7 @@
     const controller2 = renderer.xr.getController(1);
 
     // Add helper visuals for the controllers
-    const controllerGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.1, 32);
+    const controllerGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.05, 32);
     const controllerMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
     const controllerMesh1 = new THREE.Mesh(controllerGeometry, controllerMaterial);
     const controllerMesh2 = new THREE.Mesh(controllerGeometry, controllerMaterial);
