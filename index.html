@@ -112,7 +112,8 @@
     }
 
     // Draw the gray button with rounded corners
-    ctx.fillStyle = '#808080'; // Gray color
+    // ctx.fillStyle = '#808080'; // Gray color
+    ctx.fillStyle = '#0000ff'; // Blue color
     drawRoundedRect(ctx, 0, 0, 256, 128, 40); // Rounded corners with a radius of 20
 
     // Add white text
@@ -120,7 +121,7 @@
     ctx.font = '60px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('EXIT', 128, 64);
+    ctx.fillText('exit', 128, 64);
 
     const buttonTexture = new THREE.CanvasTexture(buttonCanvas);
     const buttonMaterial = new THREE.MeshBasicMaterial({ map: buttonTexture, transparent: true });
@@ -327,7 +328,7 @@
           fadeProgress = THREE.MathUtils.clamp(fadeProgress, 0, 1); // Clamp between 0 and 1
 
           // Update sphere opacity for fade effect
-          sphereMaterial.uniforms.uOpacity.value = 0.75*fadeProgress;
+          sphereMaterial.uniforms.uOpacity.value = 0.85*fadeProgress;
 
           // Update overlay opacity
           // overlayMaterial.uniforms.uOpacity.value = fadeProgress;
