@@ -129,6 +129,8 @@
     buttonMesh.position.set(0, -0.3, -0.5); // Position the button directly on the floor
     // scene.add(buttonMesh);
 
+    buttonMesh.renderOrder = 999; // Set a high render order
+    
     // Create a raycaster and an array to store interactable objects
     const raycaster = new THREE.Raycaster();
     const intersectableObjects = [buttonMesh];
