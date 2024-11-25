@@ -21,6 +21,21 @@
     import { OBJLoader } from './OBJLoader.js';
     import { MTLLoader } from './MTLLoader.js';
 
+    let doRotate = true;
+    let stoppingRotation = false;
+    let startDive = false;
+    let waitForDescent = false;
+    let bDescending = false;
+    let diveClock; 
+    const TIME_TO_OPAQUE = 10.0;
+    const START_OPACITY = 0.9;
+    const DIVESTART = 10.0; //107.0;
+    const DIVELENGTH = 35.0 * 25;//35.0; // tweaked to work perceptually
+    const LIGHTBLUE = new THREE.Color(0x87ceeb);
+    const DARKBLUE = new THREE.Color(0x00008b);
+    const BLACK = new THREE.Color(0x000000); // Black
+
+    
     const twoPi = 2 * Math.PI;
     // Add a clock to track time
     const clock = new THREE.Clock();
@@ -56,23 +71,6 @@
         
       });
     });
-
-
-
-    let startDive = false;
-    let waitForDescent = false;
-    let bDescending = false;
-    let diveClock; 
-    const TIME_TO_OPAQUE = 10.0;
-    const START_OPACITY = 0.9;
-    const DIVESTART = 107.0;
-    const DIVELENGTH = 35.0 * 25;//35.0; // tweaked to work perceptually
-    const LIGHTBLUE = new THREE.Color(0x87ceeb);
-    const DARKBLUE = new THREE.Color(0x00008b);
-    const BLACK = new THREE.Color(0x000000); // Black
-
-    let doRotate = true;
-    let stoppingRotation = false;
 
     // Enable AR button
     document.body.appendChild(ARButton.createButton(renderer, { optionalFeatures: ['local-floor', 'dom-overlay'], domOverlay: { root: document.body } }));
@@ -376,8 +374,10 @@
           const easedFactor = lerpFactor * lerpFactor * (3 - 2 * lerpFactor); // Smoothstep easing
 
           // fade in opacity as we start descending
-          const lerpedOpacity = Math.clamp(Math.max(START_OPACITY, elapsedTime / 10.0), 1.0);
+          let clampedTime = THREE.MathUtils.clamp(elapsedTime / 10.0, 0, 0.99)
+          let lerpedOpacity = Math.max(START_OPACITY, clampedTime);
           sphereMaterial.uniforms.uOpacity.value = lerpedOpacity;
+          console.log(START_OPACITY, elapsedTime, clampedTime, lerpedOpacity);
 
           // Lerp colors to black
           // sphereMaterial.uniforms.uTopColor.value.lerpColors(LIGHTBLUE, BLACK, lerpFactor);
