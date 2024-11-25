@@ -64,6 +64,7 @@
     let bDescending = false;
     let diveClock; 
     const TIME_TO_OPAQUE = 10.0;
+    const START_OPACITY = 0.9;
     const DIVESTART = 107.0;
     const DIVELENGTH = 35.0 * 25;//35.0; // tweaked to work perceptually
     const LIGHTBLUE = new THREE.Color(0x87ceeb);
@@ -328,7 +329,7 @@
           fadeProgress = THREE.MathUtils.clamp(fadeProgress, 0, 1); // Clamp between 0 and 1
 
           // Update sphere opacity for fade effect
-          sphereMaterial.uniforms.uOpacity.value = 0.85*fadeProgress;
+          sphereMaterial.uniforms.uOpacity.value = START_OPACITY*fadeProgress;
 
           // Update overlay opacity
           // overlayMaterial.uniforms.uOpacity.value = fadeProgress;
@@ -356,12 +357,13 @@
         if (waitForDescent) {
           const elapsedTime = clock.getElapsedTime();
           console.log(elapsedTime);
+
           if (elapsedTime > DIVESTART) {
             diveClock = new THREE.Clock();
             bDescending = true;
             waitForDescent = false;
             
-            // Reset opacity to 100%
+            // // Reset opacity to 100%
             // sphereMaterial.uniforms.uOpacity.value = 1.0;
 
             console.log('starting descent...')
@@ -373,13 +375,17 @@
           const lerpFactor = Math.min(elapsedTime / DIVELENGTH, 1.0); // Lerp progress (clamped between 0 and 1)
           const easedFactor = lerpFactor * lerpFactor * (3 - 2 * lerpFactor); // Smoothstep easing
 
+          // fade in opacity as we start descending
+          const lerpedOpacity = Math.clamp(Math.max(START_OPACITY, elapsedTime / 10.0), 1.0);
+          sphereMaterial.uniforms.uOpacity.value = lerpedOpacity;
+
           // Lerp colors to black
           // sphereMaterial.uniforms.uTopColor.value.lerpColors(LIGHTBLUE, BLACK, lerpFactor);
           // sphereMaterial.uniforms.uBottomColor.value.lerpColors(DARKBLUE, BLACK, lerpFactor);
           sphereMaterial.uniforms.uTopColor.value.lerpColors(LIGHTBLUE, BLACK, easedFactor);
           sphereMaterial.uniforms.uBottomColor.value.lerpColors(DARKBLUE, BLACK, easedFactor);
 
-          console.log(elapsedTime, lerpFactor, easedFactor, sphereMaterial.uniforms.uTopColor.value);
+          // console.log(elapsedTime, lerpFactor, easedFactor, sphereMaterial.uniforms.uTopColor.value);
           
           if (elapsedTime > DIVELENGTH) {
             bDescending = false;
