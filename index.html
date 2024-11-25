@@ -31,29 +31,32 @@
     let bWaitForEnd = false;
 
     let diveClock; 
-    // const TIME_TO_OPAQUE = 10.0;
-    // const START_OPACITY = 0.9;
-    // const DIVESTART = 107.0; // 10.0;
-    // const DIVELENGTH = 35.0 * 25;//35.0; // tweaked to work perceptually
-    // const SURFACESTART = 493;
-    // const ASCENTLENGTH = 24.0;
-    // const TOTAL_RUNTIME = 560.0;
-
-    // testing
-    const START_DELAY = 1.0;
+    
+    // full length
+    const START_DELAY = 5.0;
     const TIME_TO_OPAQUE = 10.0;
     const START_OPACITY = 0.9;
-    const DIVESTART = 10.0;
-    const DIVELENGTH = 10.0;
-    const SURFACESTART = 30;
-    const ASCENTLENGTH = 10.0;
-    const TOTAL_RUNTIME = 50;
+    const TIME_TO_OPAQUE_DIVE = 3.0;
+    const DIVESTART = 107;
+    const DIVELENGTH = 35;
+    const SURFACESTART = 493;
+    const ASCENTLENGTH = 24;
+    const TOTAL_RUNTIME = 560;
 
+    // testing
+    // const START_DELAY = 1.0;
+    // const TIME_TO_OPAQUE = 10.0;
+    // const START_OPACITY = 0.9;
+    // const TIME_TO_OPAQUE_DIVE = 3.0;
+    // const DIVESTART = 10.0;
+    // const DIVELENGTH = 10.0;
+    // const SURFACESTART = 30;
+    // const ASCENTLENGTH = 10.0;
+    // const TOTAL_RUNTIME = 50;
 
-    const LIGHTBLUE = new THREE.Color(0x87ceeb);
-    const DARKBLUE = new THREE.Color(0x00008b);
-    const BLACK = new THREE.Color(0x000000); // Black
-
+    let LIGHTBLUE = new THREE.Color(0x87ceeb);
+    let DARKBLUE = new THREE.Color(0x00008b);
+    let BLACK = new THREE.Color(0x000000); // Black
     
     const twoPi = 2 * Math.PI;
     // Add a clock to track time
@@ -69,31 +72,34 @@
 
     // Load the fish model
     let fish = null;
-    const mtlLoader = new MTLLoader();
-    mtlLoader.load('./media/fish.mtl', (materials) => {
-      materials.preload(); // Prepare materials for use
 
-      const objLoader = new OBJLoader();
-      objLoader.setMaterials(materials); // Apply materials to OBJLoader
-      objLoader.load('./media/fish.obj', (loadedObject) => {
-        fish = loadedObject;
-        fish.scale.set(0.3, 0.3, 0.3); //0.5, 0.5, 0.5);
-        fish.position.set(0, 0.15, -1);
-        fish.rotation.set(0,0,0);
-        scene.add(fish);
+    function loadFish() {
+      const mtlLoader = new MTLLoader();
+      mtlLoader.load('./media/fish.mtl', (materials) => {
+        materials.preload(); // Prepare materials for use
 
-        fish.traverse((child) => {
-          if (child.isMesh) {
-            child.material.transparent = true; // Ensure the material is transparent
-          }
+        const objLoader = new OBJLoader();
+        objLoader.setMaterials(materials); // Apply materials to OBJLoader
+        objLoader.load('./media/fish.obj', (loadedObject) => {
+          fish = loadedObject;
+          fish.scale.set(0.3, 0.3, 0.3); //0.5, 0.5, 0.5);
+          fish.position.set(0, 0.15, -1);
+          fish.rotation.set(0,0,0);
+          scene.add(fish);
+
+          fish.traverse((child) => {
+            if (child.isMesh) {
+              child.material.transparent = true; // Ensure the material is transparent
+            }
+          });
+
+          fish.renderOrder = 800;
+          
         });
-
-        fish.renderOrder = 800;
-        
       });
-    });
-
+    }
     
+    loadFish();
 
     // Enable AR button
     document.body.appendChild(ARButton.createButton(renderer, { optionalFeatures: ['local-floor', 'dom-overlay'], domOverlay: { root: document.body } }));
@@ -238,34 +244,32 @@
     scene.add(sphere);
 
     // Add a quad plane for the background overlay
-    const overlayGeometry = new THREE.PlaneGeometry(2, 2);
-    const overlayMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        uColor: { value: new THREE.Color(0x0000ff) }, // Blue color
-        uOpacity: { value: 0.2 }, // Initial opacity
-      },
-      vertexShader: `
-        void main() {
-          gl_Position = vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 uColor;
-        uniform float uOpacity;
-        void main() {
-          gl_FragColor = vec4(uColor, uOpacity);
-        }
-      `,
-      transparent: true, // Enable transparency
-    });
-    const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
-    overlayMesh.frustumCulled = false; // Ensure it renders regardless of camera frustum
+    // const overlayGeometry = new THREE.PlaneGeometry(2, 2);
+    // const overlayMaterial = new THREE.ShaderMaterial({
+    //   uniforms: {
+    //     uColor: { value: new THREE.Color(0x0000ff) }, // Blue color
+    //     uOpacity: { value: 0.2 }, // Initial opacity
+    //   },
+    //   vertexShader: `
+    //     void main() {
+    //       gl_Position = vec4(position, 1.0);
+    //     }
+    //   `,
+    //   fragmentShader: `
+    //     uniform vec3 uColor;
+    //     uniform float uOpacity;
+    //     void main() {
+    //       gl_FragColor = vec4(uColor, uOpacity);
+    //     }
+    //   `,
+    //   transparent: true, // Enable transparency
+    // });
+    // const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
+    // overlayMesh.frustumCulled = false; // Ensure it renders regardless of camera frustum
     // scene.add(overlayMesh);
 
 
     // AUDIO PLAYBACK
-    // Add an audio element to play the file
-    // const audio = new Audio('media/day2-all.mp3');
     const audio = new Audio('media/nov24-xr.mp3');
 
     // Handle XR Session for passthrough
@@ -313,25 +317,41 @@
       console.log('Resetting to starting screen...');
       
       // Remove all 3D objects from the scene
-      while (scene.children.length > 0) {
-        const object = scene.children[0];
-        scene.remove(object);
-        if (object.geometry) object.geometry.dispose();
-        if (object.material) {
-          if (Array.isArray(object.material)) {
-            object.material.forEach((m) => m.dispose());
-          } else {
-            object.material.dispose();
-          }
-        }
-      }
+      // while (scene.children.length > 0) {
+      //   const object = scene.children[0];
+      //   scene.remove(object);
+      //   if (object.geometry) object.geometry.dispose();
+      //   if (object.material) {
+      //     if (Array.isArray(object.material)) {
+      //       object.material.forEach((m) => m.dispose());
+      //     } else {
+      //       object.material.dispose();
+      //     }
+      //   }
+      // }
 
+      
       // Reset camera position and scene state
-      camera.position.set(0, 0, 0);
-      camera.lookAt(0, 0, -1);
+      // camera.position.set(0, 0, 0);
+      // camera.lookAt(0, 0, -1);
 
       // Optionally reload the page to completely reset
       location.reload(); // Uncomment this line to reload the entire page
+
+      // LIGHTBLUE = new THREE.Color(0x87ceeb);
+      // DARKBLUE = new THREE.Color(0x00008b);
+      
+      // // Update sphere opacity for fade effect
+      // sphereMaterial.uniforms.uOpacity.value = 0;
+      // sphereMaterial.uniforms.uTopColor.value = LIGHTBLUE;
+      // sphereMaterial.uniforms.uBottomColor.value = DARKBLUE;
+
+      // loadFish();
+
+      // stoppingRotation = true;
+      // console.log('Restart playing...');
+      // startDive = true;
+      // clock.start();
     }
 
     let fadeDirection = 1; // 1 for fading to blue, -1 for fading back to transparent
@@ -340,7 +360,6 @@
     // Animation loop
     function animate() {
       renderer.setAnimationLoop(() => {
-
         
         // if (isARMode) {
         if (startDive) {
@@ -390,6 +409,10 @@
             // sphereMaterial.uniforms.uOpacity.value = 1.0;
 
             console.log(elapsedTime, 'starting descent...')
+
+            LIGHTBLUE = new THREE.Color(0x87ceeb);
+            DARKBLUE = new THREE.Color(0x00008b);
+            BLACK = new THREE.Color(0x000000); // Black
           }
         }
 
@@ -400,15 +423,11 @@
           // const easedFactor = lerpFactor;
 
           // fade in opacity as we start descending
-          let clampedTime = THREE.MathUtils.clamp(elapsedTime / (DIVELENGTH*0.5), 0, 0.99)
+          let clampedTime = THREE.MathUtils.clamp(elapsedTime / (TIME_TO_OPAQUE_DIVE), 0, 1.00)
           let lerpedOpacity = Math.max(START_OPACITY, clampedTime);
           sphereMaterial.uniforms.uOpacity.value = lerpedOpacity;
           // console.log(START_OPACITY, elapsedTime, clampedTime, lerpedOpacity);
 
-          const LIGHTBLUE = new THREE.Color(0x87ceeb);
-          const DARKBLUE = new THREE.Color(0x00008b);
-          const BLACK = new THREE.Color(0x000000); // Black
-          
           sphereMaterial.uniforms.uTopColor.value.lerpColors(LIGHTBLUE, BLACK, easedFactor);
           sphereMaterial.uniforms.uBottomColor.value.lerpColors(DARKBLUE, BLACK, easedFactor);
           
@@ -434,6 +453,10 @@
             // sphereMaterial.uniforms.uOpacity.value = 1.0;
 
             console.log(elapsedTime, 'starting ascent...')
+
+            LIGHTBLUE = new THREE.Color(0x87ceeb);
+            DARKBLUE = new THREE.Color(0x00008b);
+            BLACK = new THREE.Color(0x000000);
           }
         }
 
@@ -448,10 +471,7 @@
           // let lerpedOpacity = Math.max(START_OPACITY, clampedTime);
           // sphereMaterial.uniforms.uOpacity.value = lerpedOpacity;
           // console.log(START_OPACITY, elapsedTime, clampedTime, lerpedOpacity);
-
-          const LIGHTBLUE = new THREE.Color(0x87ceeb);
-          const DARKBLUE = new THREE.Color(0x00008b);
-          const BLACK = new THREE.Color(0x000000); // Black
+          sphereMaterial.uniforms.uOpacity.value = 0.99;
 
           // Lerp colors back to yellow
           sphereMaterial.uniforms.uTopColor.value.lerpColors(BLACK, LIGHTBLUE, easedFactor);
