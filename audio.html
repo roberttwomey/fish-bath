@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebXR Speech Waveform</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@latest/build/three.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/three@latest/examples/js/libs/ar.js"></script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/ARButton.js"></script> -->
+</head>
+<body style="margin: 0; overflow: hidden;">
+  <script type="module">
+    import { ARButton } from "https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/webxr/ARButton.js"
+    // Create a Three.js scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    // AR Button
+    document.body.appendChild(ARButton.createButton(renderer));
+
+    let audioContext;
+    let analyser;
+    let dataArray;
+    let audioStarted = false;
+
+    let waveformGeometry, waveformMaterial, waveformLine, waveformVertices;
+    let bufferLength = 256;
+
+    function initAudio() {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        const source = audioContext.createMediaStreamSource(stream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = bufferLength;
+        console.log("created analyser");
+
+        source.connect(analyser);
+
+        // const bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+
+        // Set the initial waveform geometry
+        for (let i = 0; i < bufferLength; i++) {
+          waveformVertices[i * 3] = i / bufferLength - 0.5; // x
+          waveformVertices[i * 3 + 1] = 0;                 // y
+          waveformVertices[i * 3 + 2] = -0.5;                 // z
+        }
+        waveformGeometry.setAttribute('position', new THREE.BufferAttribute(waveformVertices, 3));
+        
+      }).catch(err => console.error(err));
+    }
+    
+    function addWaveform() {
+        // Create a line geometry to display the waveform
+        waveformGeometry = new THREE.BufferGeometry();
+
+        waveformVertices = new Float32Array(bufferLength * 3); // For 1024 points
+        waveformGeometry.setAttribute('position', new THREE.BufferAttribute(waveformVertices, 3));
+        waveformMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+        waveformLine = new THREE.Line(waveformGeometry, waveformMaterial);
+        scene.add(waveformLine);
+
+        console.log("added waveform");
+    }
+
+    function updateWaveform() {
+      if (analyser) {
+        analyser.getByteTimeDomainData(dataArray);
+
+        const positions = waveformGeometry.attributes.position.array;
+        for (let i = 0; i < dataArray.length; i++) {
+          positions[i * 3 + 1] = dataArray[i] / 128.0 - 1.0; // Map data to -1 to 1
+        }
+        waveformGeometry.attributes.position.needsUpdate = true;
+        // console.log(positions[0]);
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      renderer.setAnimationLoop(() => {
+        if (audioStarted) {
+            updateWaveform();
+        }
+        renderer.render(scene, camera);
+      });
+    }
+
+    // Handle XR Session for passthrough
+    renderer.xr.addEventListener('sessionstart', () => {
+      const session = renderer.xr.getSession();
+      if (session.environmentBlendMode === "opaque") {
+        console.log("Passthrough enabled on Meta Quest 2.");
+      } else {
+        console.error("Passthrough is not supported.");
+      }
+
+      
+
+      // Audio setup
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+      // Start the app
+      initAudio();
+      audioStarted = true;
+    });
+    
+    addWaveform();
+
+    animate();
+  </script>
+</body>
+</html>
