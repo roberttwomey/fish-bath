@@ -29,7 +29,7 @@
     let diveClock; 
     const TIME_TO_OPAQUE = 10.0;
     const START_OPACITY = 0.9;
-    const DIVESTART = 10.0; //107.0;
+    const DIVESTART = 107.0; // 10.0;
     const DIVELENGTH = 35.0 * 25;//35.0; // tweaked to work perceptually
     const LIGHTBLUE = new THREE.Color(0x87ceeb);
     const DARKBLUE = new THREE.Color(0x00008b);
@@ -374,7 +374,7 @@
           const easedFactor = lerpFactor * lerpFactor * (3 - 2 * lerpFactor); // Smoothstep easing
 
           // fade in opacity as we start descending
-          let clampedTime = THREE.MathUtils.clamp(elapsedTime / 10.0, 0, 0.99)
+          let clampedTime = THREE.MathUtils.clamp(elapsedTime / (DIVELENGTH*0.5), 0, 0.99)
           let lerpedOpacity = Math.max(START_OPACITY, clampedTime);
           sphereMaterial.uniforms.uOpacity.value = lerpedOpacity;
           console.log(START_OPACITY, elapsedTime, clampedTime, lerpedOpacity);
