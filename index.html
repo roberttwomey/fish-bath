@@ -68,9 +68,13 @@
             child.material.transparent = true; // Ensure the material is transparent
           }
         });
+
+        fish.renderOrder = 800;
         
       });
     });
+
+    
 
     // Enable AR button
     document.body.appendChild(ARButton.createButton(renderer, { optionalFeatures: ['local-floor', 'dom-overlay'], domOverlay: { root: document.body } }));
@@ -120,7 +124,7 @@
     ctx.font = '60px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('exit', 128, 64);
+    ctx.fillText('restart', 128, 64);
 
     const buttonTexture = new THREE.CanvasTexture(buttonCanvas);
     const buttonMaterial = new THREE.MeshBasicMaterial({ map: buttonTexture, transparent: true });
