@@ -31,15 +31,19 @@
     let bWaitForEnd = false;
 
     let diveClock; 
+
+    // full length
+    // const START_DELAY = 5.0;
     // const TIME_TO_OPAQUE = 10.0;
     // const START_OPACITY = 0.9;
-    // const DIVESTART = 107.0; // 10.0;
-    // const DIVELENGTH = 35.0 * 25;//35.0; // tweaked to work perceptually
+    // const TIME_TO_OPAQUE_DIVE = 3.0;
+    // const DIVESTART = 107;
+    // const DIVELENGTH = 35;
     // const SURFACESTART = 493;
-    // const ASCENTLENGTH = 24.0;
-    // const TOTAL_RUNTIME = 560.0;
+    // const ASCENTLENGTH = 24;
+    // const TOTAL_RUNTIME = 560;
 
-    // testing
+    // quick
     const START_DELAY = 1.0;
     const TIME_TO_OPAQUE = 10.0;
     const START_OPACITY = 0.9;
@@ -52,10 +56,10 @@
 
     let LIGHTBLUE = new THREE.Color(0x87ceeb);
     let DARKBLUE = new THREE.Color(0x00008b);
-    let BLACK = new THREE.Color(0x000000); // Black
+    let BLACK = new THREE.Color(0x000000);
     
     const twoPi = 2 * Math.PI;
-    // Add a clock to track time
+    // global clock
     const clock = new THREE.Clock();
     
     // Set up scene, camera, and renderer
@@ -93,6 +97,19 @@
           
         });
       });
+    }
+    
+    function removeFish() {
+      scene.remove(fish);
+        
+      if (fish.geometry) fish.geometry.dispose();
+      if (fish.material) {
+        if (Array.isArray(fish.material)) {
+          fish.material.forEach((m) => m.dispose());
+        } else {
+          fish.material.dispose();
+        }
+      }
     }
     
     loadFish();
@@ -137,11 +154,11 @@
 
     // Draw the gray button with rounded corners
     // ctx.fillStyle = '#808080'; // Gray color
-    ctx.fillStyle = '#000088'; // Blue color
+    ctx.fillStyle = '#000011'; // Blue color
     drawRoundedRect(ctx, 0, 0, 256, 128, 40); // Rounded corners with a radius of 20
 
     // Add white text
-    ctx.fillStyle = '#ffffff'; // White color
+    ctx.fillStyle = '#101010';//'#ffffff'; // White color
     ctx.font = '60px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -151,7 +168,8 @@
     const buttonMaterial = new THREE.MeshBasicMaterial({ map: buttonTexture, transparent: true });
     const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
 
-    buttonMesh.position.set(0, -0.3, -0.5); // Position the button directly on the floor
+    buttonMesh.position.set(0, -0.45, -0.5); // Position the button directly on the floor
+    buttonMesh.rotation.set(-45, 0, 0);
     // scene.add(buttonMesh);
 
     buttonMesh.renderOrder = 999; // Set a high render order
@@ -239,32 +257,6 @@
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
     scene.add(sphere);
 
-    // Add a quad plane for the background overlay
-    // const overlayGeometry = new THREE.PlaneGeometry(2, 2);
-    // const overlayMaterial = new THREE.ShaderMaterial({
-    //   uniforms: {
-    //     uColor: { value: new THREE.Color(0x0000ff) }, // Blue color
-    //     uOpacity: { value: 0.2 }, // Initial opacity
-    //   },
-    //   vertexShader: `
-    //     void main() {
-    //       gl_Position = vec4(position, 1.0);
-    //     }
-    //   `,
-    //   fragmentShader: `
-    //     uniform vec3 uColor;
-    //     uniform float uOpacity;
-    //     void main() {
-    //       gl_FragColor = vec4(uColor, uOpacity);
-    //     }
-    //   `,
-    //   transparent: true, // Enable transparency
-    // });
-    // const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
-    // overlayMesh.frustumCulled = false; // Ensure it renders regardless of camera frustum
-    // scene.add(overlayMesh);
-
-
     // AUDIO PLAYBACK
     const audio = new Audio('media/nov24-xr.mp3');
 
@@ -332,22 +324,25 @@
       // camera.lookAt(0, 0, -1);
 
       // Optionally reload the page to completely reset
-      location.reload(); // Uncomment this line to reload the entire page
+      // location.reload(); // Uncomment this line to reload the entire page
 
-      // LIGHTBLUE = new THREE.Color(0x87ceeb);
-      // DARKBLUE = new THREE.Color(0x00008b);
+      LIGHTBLUE = new THREE.Color(0x87ceeb);
+      DARKBLUE = new THREE.Color(0x00008b);
       
-      // // Update sphere opacity for fade effect
-      // sphereMaterial.uniforms.uOpacity.value = 0;
-      // sphereMaterial.uniforms.uTopColor.value = LIGHTBLUE;
-      // sphereMaterial.uniforms.uBottomColor.value = DARKBLUE;
+      // Update sphere opacity for fade effect
+      fadeProgress = 0;
+      sphereMaterial.uniforms.uOpacity.value = 0;
+      sphereMaterial.uniforms.uTopColor.value = LIGHTBLUE;
+      sphereMaterial.uniforms.uBottomColor.value = DARKBLUE;
 
-      // loadFish();
+      removeFish();
 
-      // stoppingRotation = true;
-      // console.log('Restart playing...');
-      // startDive = true;
-      // clock.start();
+      loadFish();
+
+      stoppingRotation = true;
+      console.log('Restart playing...');
+      startDive = true;
+      clock.start();
     }
 
     let fadeDirection = 1; // 1 for fading to blue, -1 for fading back to transparent
@@ -492,24 +487,11 @@
             resetToStartScreen();
           }
         }
-
         // Rotate the fish
         if (fish != null && doRotate) {
           fish.rotation.x = (fish.rotation.x + 0.01) % twoPi;
           fish.rotation.y = (fish.rotation.y + 0.01) % twoPi;
         }
-
-        // if (stoppingRotation && fish != null) {
-        //   // console.log('stopping rotation');
-        //   // console.log(fish.rotation.x);
-        //   // console.log(fish.rotation.y);
-        //   if (Math.abs(fish.rotation.x) <= 0.1 && Math.abs(fish.rotation.y) <= 0.1) {
-        //     // stoppingRotation = false; // Stop rotation
-        //     doRotate = false;
-        //     fish.rotation.x = 0; // Snap to 0 if close enough
-        //     fish.rotation.y = 0; // Snap to 0 if close enough
-        //   }
-        // }
 
         // Render the scene
         renderer.render(scene, camera);
