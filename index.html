@@ -324,25 +324,25 @@
       // camera.lookAt(0, 0, -1);
 
       // Optionally reload the page to completely reset
-      // location.reload(); // Uncomment this line to reload the entire page
+      location.reload(); // Uncomment this line to reload the entire page
 
-      LIGHTBLUE = new THREE.Color(0x87ceeb);
-      DARKBLUE = new THREE.Color(0x00008b);
+      // LIGHTBLUE = new THREE.Color(0x87ceeb);
+      // DARKBLUE = new THREE.Color(0x00008b);
       
-      // Update sphere opacity for fade effect
-      fadeProgress = 0;
-      sphereMaterial.uniforms.uOpacity.value = 0;
-      sphereMaterial.uniforms.uTopColor.value = LIGHTBLUE;
-      sphereMaterial.uniforms.uBottomColor.value = DARKBLUE;
+      // // Update sphere opacity for fade effect
+      // fadeProgress = 0;
+      // sphereMaterial.uniforms.uOpacity.value = 0;
+      // sphereMaterial.uniforms.uTopColor.value = LIGHTBLUE;
+      // sphereMaterial.uniforms.uBottomColor.value = DARKBLUE;
 
-      removeFish();
+      // removeFish();
 
-      loadFish();
+      // loadFish();
 
-      stoppingRotation = true;
-      console.log('Restart playing...');
-      startDive = true;
-      clock.start();
+      // stoppingRotation = true;
+      // console.log('Restart playing...');
+      // startDive = true;
+      // clock.start();
     }
 
     let fadeDirection = 1; // 1 for fading to blue, -1 for fading back to transparent
